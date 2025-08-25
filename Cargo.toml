@@ -2,7 +2,7 @@
 name = "rain_quantum_simulator"
 version = "0.1.0"
 edition = "2024"
-LICENSE = "MIT"
+license = "MIT"
 description = "quantum computing simulator with quantum gates, registers, and state vector operations"
 
 [dependencies]
