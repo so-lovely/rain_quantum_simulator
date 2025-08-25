@@ -1,0 +1,9 @@
+[package]
+name = "quantum_simulator_rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+num-traits = "0.2"
+complex_rs = "0.1.0"
+rain_linalg = "0.1.0"
