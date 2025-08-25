@@ -27,20 +27,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "quantum_simulator_rs"
+name = "rain_linalg"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eee7460aec9c490f837f057c70c6afe26c6e360db01e6fd2e3ae83b175c9fd4"
+dependencies = [
+ "complex_rs",
+ "num-traits",
+]
+
+[[package]]
+name = "rain_quantum_simulator"
 version = "0.1.0"
 dependencies = [
  "complex_rs",
  "num-traits",
  "rain_linalg",
-]
-
-[[package]]
-name = "rain_linalg"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d49c5568ed7e6f9cc4c89aea9f48a8eb0b115c053642d635bb7e07adb97fdc3b"
-dependencies = [
- "complex_rs",
- "num-traits",
 ]

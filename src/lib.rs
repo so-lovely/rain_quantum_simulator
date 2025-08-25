@@ -29,7 +29,7 @@ impl<T: Float> QuantumRegister<T> {
     }
 }
 
-#[derive(debug)]
+#[derive(Debug)]
 pub struct QuantumGate<T: Float> {
     pub name: String,
     matrix: Matrix<T>,
@@ -144,7 +144,7 @@ mod tests
     
     fn assert_vector_eq(a: &Vector<f64>, b: &Vector<f64>) {
         assert_eq!(a.dim(), b.dim());
-        for (ca, cb) in a.elements.iter().zip(b.elements.iter()) {
+        for (ca, cb) in a.elements().iter().zip(b.elements().iter()) {
             assert_complex_eq(*ca, *cb);
         }
     }
