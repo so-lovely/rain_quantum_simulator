@@ -53,23 +53,23 @@ impl<T: Float> QuantumRegister<T> {
         let mut original_indices = Vec::with_capacity(gate_dim);
 
         for j in 0..gate_dim {
+    
             let mut index = 0;
-
-            
-            for k in 0..num_other_qubits {
-                if (i >> k) & 1 == 1 {
-                    index |= 1 << other_qubits[k];
+            let mut other_pos = 0;
+            for k in 0..self.num_qubits {
+                if let Some(pos) = targets.iter().position(|&t| t == k) {
+                    let bit_pos = num_targets - 1 - pos;
+                    if (j >> bit_pos) & 1 == 1 {
+                        index |= 1 << k;
+                    }
+                } else {
+                    if (i >> other_pos) & 1 == 1 {
+                        index |= 1 << k;
+                    }
+                    other_pos += 1;
                 }
             }
-
             
-            for k in 0..num_targets {
-                if (j >> k) & 1 == 1 {
-                    let qubit_index = targets[num_targets - 1 - k];
-                    index |= 1 << qubit_index;
-                }
-            }
-
             sub_vector_elements.push(self.state_vector.get(index));
             original_indices.push(index);
         }
@@ -81,9 +81,9 @@ impl<T: Float> QuantumRegister<T> {
             new_state_elements[original_indices[j]] = transformed_sub_vector.get(j);
         }
     }
-
+    
     self.state_vector = Vector::new(new_state_elements);
-    }
+}
 
     pub fn measure(&self) -> usize {
         let probabilities: Vec<f64> = self.state_vector.elements().iter().map(|c| c.magnitude_squared().to_f64().unwrap()).collect();
