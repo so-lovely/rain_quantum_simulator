@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "rain_quantum_simulator"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "complex_rs",
  "num-traits",
