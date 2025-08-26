@@ -21,15 +21,76 @@ impl<T: Float> QuantumRegister<T> {
             state_vector: Vector::new(elements),
         }
     }
+
     pub fn state_vector(&self) -> &Vector<T> {
         &self.state_vector
     }
+
     pub fn num_qubits(&self) -> usize {
         self.num_qubits
     }
+
+
+
+    pub fn apply_gate(&mut self, targets: &[usize], gate: &QuantumGate<T>) {
+    let num_targets = targets.len();
+    let gate_dim = 1 << num_targets;
+    assert_eq!(gate.matrix.rows(), gate_dim, "Gate dimension does not match number of target qubits.");
+
+    let num_other_qubits = self.num_qubits - num_targets;
+    let mut other_qubits = Vec::with_capacity(num_other_qubits);
+    for i in 0..self.num_qubits {
+        if !targets.contains(&i) {
+            other_qubits.push(i);
+        }
+    }
+
+    let mut new_state_elements = self.state_vector.elements().to_vec();
+
+    for i in 0..(1 << num_other_qubits) {
+        let mut sub_vector_elements = Vec::with_capacity(gate_dim);
+        let mut original_indices = Vec::with_capacity(gate_dim);
+
+        for j in 0..gate_dim {
+            // --- 여기가 수정된 핵심 로직입니다 ---
+            let mut index = 0;
+
+            // 1. '나머지' 큐비트들의 비트를 먼저 채웁니다.
+            // i의 k번째 비트는 other_qubits 리스트의 k번째 큐비트에 해당합니다.
+            for k in 0..num_other_qubits {
+                if (i >> k) & 1 == 1 {
+                    index |= 1 << other_qubits[k];
+                }
+            }
+
+            // 2. '타겟' 큐비트들의 비트를 채웁니다.
+            // [중요] targets 배열의 순서를 존중합니다.
+            // targets = [q_msb, ..., q_lsb]
+            // j의 k번째 비트(LSB부터)는 targets 배열의 끝에서부터 k번째 큐비트에 해당합니다.
+            for k in 0..num_targets {
+                if (j >> k) & 1 == 1 {
+                    let qubit_index = targets[num_targets - 1 - k];
+                    index |= 1 << qubit_index;
+                }
+            }
+
+            sub_vector_elements.push(self.state_vector.get(index));
+            original_indices.push(index);
+        }
+
+        let sub_vector = Vector::new(sub_vector_elements);
+        let transformed_sub_vector = gate.matrix.clone() * sub_vector;
+
+        for j in 0..gate_dim {
+            new_state_elements[original_indices[j]] = transformed_sub_vector.get(j);
+        }
+    }
+
+    self.state_vector = Vector::new(new_state_elements);
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct QuantumGate<T: Float> {
     pub name: String,
     matrix: Matrix<T>,
@@ -41,6 +102,7 @@ impl<T: Float> QuantumGate<T> {
     
         Self { name, matrix }
     }
+
 
     /// Identity Gate
     pub fn i() -> Self {
@@ -193,4 +255,44 @@ mod tests
 
         assert_vector_eq(&result_vec, &expected_vec);
     }
+    
+
+        #[test]
+    fn test_bell_state_creation_fully() {
+        let mut reg = QuantumRegister::<f64>::new(2);
+        reg.apply_gate(&[0], &QuantumGate::h());
+
+        // CNOT (control=0, target=1) -> targets를 [0, 1] 순서로 전달
+        reg.apply_gate(&[0, 1], &QuantumGate::cnot());
+
+        let factor = 1.0 / 2.0_f64.sqrt();
+        let expected_vec = Vector::new(vec![
+            Complex::new(factor, 0.0),
+            Complex::zero(),
+            Complex::zero(),
+            Complex::new(factor, 0.0),
+        ]);
+        assert_vector_eq(reg.state_vector(), &expected_vec);
+    }
+
+    #[test]
+    fn test_ghz_state_creation() {
+        let mut reg = QuantumRegister::<f64>::new(3);
+        reg.apply_gate(&[0], &QuantumGate::h());
+
+        // CNOT (control=0, target=1) -> targets: [0, 1]
+        reg.apply_gate(&[0, 1], &QuantumGate::cnot());
+
+        // CNOT (control=0, target=2) -> targets: [0, 2]
+        reg.apply_gate(&[0, 2], &QuantumGate::cnot());
+
+        let factor = 1.0 / 2.0_f64.sqrt();
+        let mut expected_elements = vec![Complex::zero(); 8];
+        expected_elements[0] = Complex::new(factor, 0.0);
+        expected_elements[7] = Complex::new(factor, 0.0);
+        let expected_vec = Vector::new(expected_elements);
+        assert_vector_eq(reg.state_vector(), &expected_vec);
+
+    }
 }
+

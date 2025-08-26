@@ -1,6 +1,6 @@
 [package]
 name = "rain_quantum_simulator"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 description = "quantum computing simulator with quantum gates, registers, and state vector operations"
@@ -8,4 +8,4 @@ description = "quantum computing simulator with quantum gates, registers, and st
 [dependencies]
 num-traits = "0.2"
 complex_rs = "0.1.0"
-rain_linalg = "0.2.0"
+rain_linalg = "0.6.0"
