@@ -189,6 +189,10 @@ impl<T: Float> QuantumCircuit<T> {
         Self { steps: Vec::new()}
     }
 
+    pub fn len(&self) -> usize {
+        self.steps.len()
+    }
+
     pub fn add_gate(&mut self, targets: &[usize], gate:QuantumGate<T>) {
         self.steps.push((gate, targets.to_vec()));
     }
