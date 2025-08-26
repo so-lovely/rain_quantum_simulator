@@ -4,6 +4,7 @@ use complex_rs::Complex;
 use rain_linalg::Vector;
 use num_traits::Float;
 use rain_linalg::Matrix;
+use rand::{distr::Distribution, rng};
 
 #[derive(Debug)]
 pub struct QuantumRegister<T: Float> {
@@ -52,21 +53,16 @@ impl<T: Float> QuantumRegister<T> {
         let mut original_indices = Vec::with_capacity(gate_dim);
 
         for j in 0..gate_dim {
-            // --- 여기가 수정된 핵심 로직입니다 ---
             let mut index = 0;
 
-            // 1. '나머지' 큐비트들의 비트를 먼저 채웁니다.
-            // i의 k번째 비트는 other_qubits 리스트의 k번째 큐비트에 해당합니다.
+            
             for k in 0..num_other_qubits {
                 if (i >> k) & 1 == 1 {
                     index |= 1 << other_qubits[k];
                 }
             }
 
-            // 2. '타겟' 큐비트들의 비트를 채웁니다.
-            // [중요] targets 배열의 순서를 존중합니다.
-            // targets = [q_msb, ..., q_lsb]
-            // j의 k번째 비트(LSB부터)는 targets 배열의 끝에서부터 k번째 큐비트에 해당합니다.
+            
             for k in 0..num_targets {
                 if (j >> k) & 1 == 1 {
                     let qubit_index = targets[num_targets - 1 - k];
@@ -87,6 +83,16 @@ impl<T: Float> QuantumRegister<T> {
     }
 
     self.state_vector = Vector::new(new_state_elements);
+    }
+
+    pub fn measure(&self) -> usize {
+        let probabilities: Vec<f64> = self.state_vector.elements().iter().map(|c| c.magnitude_squared().to_f64().unwrap()).collect();
+
+        let mut rng = rng();
+        let dist = 
+        rand::distr::weighted::WeightedIndex::new(&probabilities).unwrap();
+        dist.sample(&mut rng)
+
     }
 }
 
@@ -174,12 +180,35 @@ impl<T: Float> QuantumGate<T> {
     }
 }
 
+pub struct QuantumCircuit<T: Float> {
+    steps: Vec<(QuantumGate<T>, Vec<usize>)>,
+}
+
+impl<T: Float> QuantumCircuit<T> {
+    pub fn new() -> Self {
+        Self { steps: Vec::new()}
+    }
+
+    pub fn add_gate(&mut self, targets: &[usize], gate:QuantumGate<T>) {
+        self.steps.push((gate, targets.to_vec()));
+    }
+
+    pub fn run(&self, register: &mut QuantumRegister<T>) {
+        for (gate, targets) in &self.steps {
+            register.apply_gate(targets, gate);
+        }
+    }
+}
+
+
+
 
 #[cfg(test)]
 mod tests
 {
     use super::*;
     use rain_linalg::Vector;
+    use super::QuantumCircuit;
     #[test]
     fn test_new_quantum_register() {
         let reg1 = QuantumRegister::<f64>::new(1);
@@ -294,5 +323,32 @@ mod tests
         assert_vector_eq(reg.state_vector(), &expected_vec);
 
     }
+
+    #[test]
+fn test_quantum_circuit_run() {
+    
+    let mut bell_circuit = QuantumCircuit::<f64>::new();
+    
+    bell_circuit.add_gate(&[0], QuantumGate::h());
+    
+    
+    bell_circuit.add_gate(&[0, 1], QuantumGate::cnot());
+
+    let mut register = QuantumRegister::<f64>::new(2);
+
+    
+    bell_circuit.run(&mut register);
+
+    
+    let factor = 1.0 / 2.0_f64.sqrt();
+    let expected_vec = Vector::new(vec![
+        Complex::new(factor, 0.0),
+        Complex::zero(),
+        Complex::zero(),
+        Complex::new(factor, 0.0),
+    ]);
+
+    assert_vector_eq(register.state_vector(), &expected_vec);
+}
 }
 

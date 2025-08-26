@@ -9,3 +9,4 @@ description = "quantum computing simulator with quantum gates, registers, and st
 num-traits = "0.2"
 complex_rs = "0.1.0"
 rain_linalg = "0.6.0"
+rand = "0.9.2"
